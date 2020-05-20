@@ -25,7 +25,7 @@ public class Slicing {
     public static class TokenizerMapper
             //set the input of map:<Object,Text>
             //set the output of map:<IntWritable, Text>
-            extends Mapper<LongWritable, Text, FloatWritable, Text> {//edited: integer first, then text/string
+            extends Mapper<LongWritable, Text, DoubleWritable, Text> {//edited: integer first, then text/string
 
 
 
@@ -36,10 +36,10 @@ public class Slicing {
             //get the vertex (String) of the triangle
             String x1=co[8], y1=co[9], z1=co[10],x2=co[12],y2=co[13],z2=co[14],x3=co[16],y3=co[17],z3=co[18];
             //converse to the float format
-            float Z1=Float.parseFloat(z1), Z2=Float.parseFloat(z2),Z3=Float.parseFloat(z3);
-            float zMax=Math.max(Math.max(Z1,Z2),Z3), zMin=Math.min(Math.min(Z1,Z2),Z3);
-            float avg=(zMax+zMin)/2;   //Get the average z value
-            FloatWritable AVG=new FloatWritable(avg);
+            double Z1=Double.parseDouble(z1), Z2=Double.parseDouble(z2),Z3=Double.parseDouble(z3);
+            double zMax=Math.max(Math.max(Z1,Z2),Z3), zMin=Math.min(Math.min(Z1,Z2),Z3);
+            double avg=(zMax+zMin)/2;   //Get the average z value
+            DoubleWritable AVG=new DoubleWritable(avg);
             // Next: Add the triangle info into value
             //divide the coordinates using commas
             String coordinates=x1+' '+y1+' '+z1+','+x2+' '+y2+' '+z2+','+x3+' '+y3+' '+z3+';';
@@ -52,12 +52,12 @@ public class Slicing {
     public static class IntSumReducer
             //edited: input of reducer: <IntWritable,Text>
             //output of reducer:<IntWritable,Text>
-            extends Reducer<FloatWritable, Text, FloatWritable, Text> {
+            extends Reducer<DoubleWritable, Text, DoubleWritable, Text> {
         //reduce:keep the input of reduce unchanged
-        public void reduce(FloatWritable key, Iterable<Text> values,
+        public void reduce(DoubleWritable key, Iterable<Text> values,
                           Context context
         ) throws IOException,InterruptedException {
-            float z0 = key.get();
+            double z0 = key.get();
 
             StringBuffer intersection = new StringBuffer();
             for(Text t:values){
@@ -72,14 +72,14 @@ public class Slicing {
 
                 String[] co = striangle.split(",");// every co is the coordinate of the triangle
                 //transfer string to coordinates
-                float[] co_x = new float[3];
-                float[] co_y = new float[3];
-                float[] co_z = new float[3];
+                double[] co_x = new double[3];
+                double[] co_y = new double[3];
+                double[] co_z = new double[3];
                 for (int i = 0; i <= 2; i++) {//the i th coordinate
                     String[] sep = co[i].split(" ");//sep stores x,y,z of the coordinate
-                    co_x[i] = Float.parseFloat(sep[0]);
-                    co_y[i] = Float.parseFloat(sep[1]);
-                    co_z[i] = Float.parseFloat(sep[2]);
+                    co_x[i] = Double.parseDouble(sep[0]);
+                    co_y[i] = Double.parseDouble(sep[1]);
+                    co_z[i] = Double.parseDouble(sep[2]);
                 }
                 Coordinate[] corners = new Coordinate[3];
                 for (int j = 0; j <= 2; j++) {
@@ -89,26 +89,30 @@ public class Slicing {
 
                 Coordinate inter1 = Slicing.getIntersect(z0, corners[0], corners[1]);
                 if (inter1 != null) {
-                    intersection.append(inter1.vectPrint());
+                    String Str_inter1=inter1.vectPrint();
+                    intersection.append(Str_inter1);
                     intersection.append(",");
 
                 }
 
 
                 Coordinate inter2 = Slicing.getIntersect(z0, corners[0], corners[2]);
-                if (inter2 != null) {
+                if (inter2 != null&&inter2!=inter1) {//To avoid repeats
 
 
-                    intersection.append(inter2.vectPrint());
+
+
+                    String Str_inter2=inter2.vectPrint();
+                    intersection.append(Str_inter2);
+
                     intersection.append(",");
                 }
 
 
                 Coordinate inter3 = Slicing.getIntersect(z0, corners[1], corners[2]);
-                if (inter3 != null) {
-
-
-                    intersection.append(inter3.vectPrint());
+                if (inter3 != null&&inter3!=inter1&&inter3!=inter2) {
+                    String Str_inter3=inter3.vectPrint();
+                    intersection.append(Str_inter3);
                     intersection.append(",");
                 }
                 intersection.append("    ");
@@ -135,10 +139,11 @@ public class Slicing {
         job.setJarByClass(Slicing.class);
         job.setMapperClass(Slicing.TokenizerMapper.class);
         job.setReducerClass(IntSumReducer.class);
-        job.setOutputKeyClass(FloatWritable.class);
+        job.setOutputKeyClass(DoubleWritable.class);
         job.setOutputValueClass(Text.class);
 
-        job.setMapOutputKeyClass(FloatWritable.class);
+
+        job.setMapOutputKeyClass(DoubleWritable.class);
         job.setMapOutputValueClass(Text.class);
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
@@ -149,9 +154,9 @@ public class Slicing {
 
 
 
-    public static Coordinate getIntersect(float z, Coordinate A, Coordinate B){
-        float subA=z-A.z;
-        float subB=z-B.z;
+    public static Coordinate getIntersect(double z, Coordinate A, Coordinate B){
+        double subA=z-A.z;
+        double subB=z-B.z;
         if(Math.abs(subA)<0.0000001){
             return A;
         }
@@ -159,7 +164,7 @@ public class Slicing {
             return B;
         }
         else if(subA*subB<0){
-            float factor=subA/(subA-subB);
+            double factor=subA/(subA-subB);
             Coordinate edge= A.sub(B,A);
             return A.add(A,edge.mul(factor));
         }
@@ -168,19 +173,19 @@ public class Slicing {
 
 
     public static class Coordinate{
-        public float x, y, z;
+        public double x, y, z;
 
-        public Coordinate(float x, float y, float z) {
+        public Coordinate(double x, double y, double z) {
             this.x = x;
             this.y = y;
             this.z = z;
         }
 
-        public float scalarProduct(Slicing.Coordinate p) {
+        public double scalarProduct(Slicing.Coordinate p) {
             return this.x * p.x + this.y * p.y + this.z * p.z;
         }
 
-        public Slicing.Coordinate mul(float factor) {
+        public Slicing.Coordinate mul(double factor) {
             return new Slicing.Coordinate(this.x * factor, this.y * factor, this.z * factor);
         }
 

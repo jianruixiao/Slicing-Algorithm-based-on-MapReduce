@@ -1,5 +1,0 @@
-facet normal -0.994522 9.8584e-17 -0.104528 outer loop vertex -3.75 -12 2.375 vertex -3.75 -11.25 2.375 vertex -3.66805 -12 1.59533 endloop endfacet
-facet normal -0.994522 9.8584e-17 -0.104528 outer loop vertex -3.66805 -12 1.59533 vertex -3.75 -11.25 2.375 vertex -3.66805 -11.25 1.59533 endloop endfacet
-facet normal -0.994522 1.45004e-16 0.104528 outer loop vertex -3.75 -12 2.375 vertex -3.66805 -12 3.15467 vertex -3.75 -11.25 2.375 endloop endfacet
-facet normal -0.994522 1.45004e-16 0.104528 outer loop vertex -3.75 -11.25 2.375 vertex -3.66805 -12 3.15467 vertex -3.66805 -11.25 3.15467 endloop endfacet
-facet normal -0.828887 -0.552591 0.087119 outer loop vertex -3.66805 -12 3.15467 vertex -3.75 -12 2.375 vertex -2.68991 -13.5 2.94676 endloop endfacet
