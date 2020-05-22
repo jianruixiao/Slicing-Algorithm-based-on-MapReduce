@@ -38,13 +38,38 @@ public class Slicing {
             //converse to the float format
             double Z1=Double.parseDouble(z1), Z2=Double.parseDouble(z2),Z3=Double.parseDouble(z3);
             double zMax=Math.max(Math.max(Z1,Z2),Z3), zMin=Math.min(Math.min(Z1,Z2),Z3);
-            double avg=(zMax+zMin)/2;   //Get the average z value
-            DoubleWritable AVG=new DoubleWritable(avg);
-            // Next: Add the triangle info into value
-            //divide the coordinates using commas
-            String coordinates=x1+' '+y1+' '+z1+','+x2+' '+y2+' '+z2+','+x3+' '+y3+' '+z3+';';
+            //the output value (String)
+            String coordinates = x1 + ' ' + y1 + ' ' + z1 + ',' + x2 + ' ' + y2 + ' ' + z2 + ',' + x3 + ' ' + y3 + ' ' + z3 + ';';
             System.out.println(coordinates);
-           context.write(AVG, new Text(coordinates));
+
+            double tenMax=zMax*10, tenMin=zMin*10;
+            double Ceil=Math.floor(tenMax)/10;
+            double Floor=Math.ceil(tenMin)/10;
+            if(Math.abs(Floor-zMin)<0.000001)Floor+=0.1;
+            if(Math.abs(Ceil-zMax)<0.000001)Ceil-=0.1;
+
+            //To check if the triangle is right on the slicing plane, I introduce the integer overlap
+            int overlap=0;
+            if(Floor>Ceil||Math.abs(Floor-Ceil)<0.0000001) {//Floor is no smaller than Ceil, meaning the triangle is on the plane
+                double nullify=Double.MAX_VALUE;
+                DoubleWritable Nullify= new DoubleWritable(nullify);
+                context.write(Nullify,new Text(coordinates));
+                overlap=1;// set overlap to 1
+            }
+            if(overlap==0) {  //Iteration occurs only when the triangle is not on the plane
+
+                double height;
+                for (height = Floor; height < Ceil || Math.abs(height-Ceil)<0.000001; height += 0.1) {  //use "or" instead of <= because of double syntax
+                    double tenHeight=height*10;
+                    height=Math.round(tenHeight)/10.0;
+                    DoubleWritable Height = new DoubleWritable(height);
+                    context.write(Height, new Text(coordinates));
+                }
+            }
+
+
+
+
         }
 
     }
@@ -57,11 +82,12 @@ public class Slicing {
         public void reduce(DoubleWritable key, Iterable<Text> values,
                           Context context
         ) throws IOException,InterruptedException {
+
             double z0 = key.get();
 
             StringBuffer intersection = new StringBuffer();
             for(Text t:values){
-               //each value is the points of triangle
+                //each value is the points of triangle
 
                 System.out.println("the triangle:");
                 System.out.println(t.toString());
@@ -122,7 +148,7 @@ public class Slicing {
 
             context.write(key, new Text(Str_intersection));
         }
-        }
+    }
 
 
 
